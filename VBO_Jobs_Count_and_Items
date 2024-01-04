@@ -1,0 +1,47 @@
+<# 
+.NAME
+    Veeam Backup for Microsoft 365 - Job Selected Items Report
+.SYNOPSIS
+    This script provides a detailed report of selected items in each Veeam Backup job for Microsoft 365.
+.DESCRIPTION
+    The script iterates through all backup jobs configured in Veeam Backup for Microsoft 365,
+    displays the name of each job, lists all selected items within these jobs, and provides a count of these items.
+    It's particularly useful for administrators to quickly audit the scope of their backup jobs.
+    The script assumes Veeam Backup for Microsoft 365 is installed and PowerShell module is imported.
+    Suitable for use in regular monitoring or auditing tasks.
+    Created for Veeam Backup for Microsoft 365
+    Please adjust the module import statement as per your installed version.
+    Released under the MIT license.
+.LINK
+http://www.github.com/nielsengelen
+#>
+
+# Make sure to replace with the correct module for Veeam Backup for Microsoft 365
+Import-Module Veeam.Explorer.SharePoint
+ 
+# Retrieve all backup jobs
+$backupJobs = Get-VBOJob
+ 
+# Loop through each job to display selected items and count them
+foreach ($job in $backupJobs) {
+    Write-Host "Job Name: $($job.Name)"
+    Write-Host "Selected Items:"
+ 
+    # Accessing the SelectedItems property
+    $selectedItems = $job.SelectedItems
+ 
+    # Check if selected items exist
+    if ($selectedItems -and $selectedItems.Count -gt 0) {
+        # Print each selected item
+        foreach ($item in $selectedItems) {
+            #Write-Host $item
+        }
+ 
+        # Count of selected items
+        Write-Host "Total Selected Items: $($selectedItems.Count)"
+    } else {
+        Write-Host "No items selected in this job."
+    }
+ 
+    Write-Host "-----------------------------"
+}
