@@ -13,7 +13,7 @@
     Please adjust the module import statement as per your installed version.
     Released under the MIT license.
 .LINK
-http://www.github.com/nielsengelen
+https://github.com/philspak/VBO365
 #>
 
 # Make sure to replace with the correct module for Veeam Backup for Microsoft 365
