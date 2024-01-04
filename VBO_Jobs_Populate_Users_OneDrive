@@ -1,0 +1,97 @@
+<#
+.SYNOPSIS
+This script is designed to automate Veeam Backup for Office 365 tasks, specifically focusing on backup job configuration for user groups.
+ 
+.DESCRIPTION
+The script performs the following actions:
+- Starts a transcript to log the script actions.
+- Imports the Veeam Backup for Office 365 PowerShell module.
+- Retrieves specified organization and repository based on user input.
+- Filters specific backup jobs based on a name pattern provided by the user.
+- Retrieves user groups and their members, with group names input by the user.
+- Creates backup items for the specified users in each group, focusing on OneDrive backups.
+- Updates the backup job with the total backup items for all specified groups.
+- Stops the transcript logging the script actions.
+ 
+The script is interactive and will prompt the administrator for necessary details such as paths, organization names, repository names, job name patterns, and group names.
+ 
+.PREREQUISITES
+- Veeam Backup for Office 365 PowerShell module must be installed.
+- Administrator should have the necessary permissions to access and configure Veeam Backup jobs and Office 365 organization details.
+ 
+.EXAMPLE
+PS> .\VeeamBackupAutomation.ps1
+This command will execute the script and prompt for the necessary input parameters.
+ 
+.INPUTS
+- Path for the transcript log
+- Name of the organization
+- Name of the repository
+- Job name pattern to filter
+- Number of groups to process
+- Display names of the groups
+ 
+.OUTPUTS
+- Transcript log file at the specified path.
+- Configured backup jobs based on the provided parameters.
+ 
+.NOTES
+Author: Philip Spakouskas
+Date: 04.01.2024
+#>
+
+
+# Start recording the script actions
+$transcriptPath = Read-Host -Prompt "Enter the path for the transcript log"
+Start-Transcript -Path $transcriptPath
+ 
+# Import Veeam Backup for Office 365 PowerShell module
+Import-Module "C:\Program Files\Veeam\Backup365\Veeam.Archiver.PowerShell\Veeam.Archiver.PowerShell.psd1"
+ 
+# Retrieve the specified organization and repository
+$orgName = Read-Host -Prompt "Enter the name of the organization"
+$repoName = Read-Host -Prompt "Enter the name of the repository"
+$Organization = Get-VBOOrganization -Name $orgName
+$repo = Get-VBORepository -Name $repoName
+ 
+# Retrieve the specific jobs for the organization
+$jobNamePattern = Read-Host -Prompt "Enter the job name pattern to filter"
+$Jobs = Get-VBOJob -Organization $Organization | Where-Object { $_.Name -match $jobNamePattern -and $_.Name -notmatch "_Debug" }
+ 
+# Retrieve groups based on user input
+$groupCount = Read-Host -Prompt "Enter the number of groups to process"
+$groupUsersList = @()
+ 
+for ($i = 1; $i -le $groupCount; $i++) {
+    $groupName = Read-Host -Prompt "Enter display name for group $i"
+    $group = Get-VBOOrganizationGroup -Organization $Organization -DisplayName $groupName
+    $groupUsers = Get-VBOOrganizationGroupMember -Group $group
+    $groupUsersList += $groupUsers
+}
+ 
+# Retrieve all users in the organization
+$users = Get-VBOOrganizationUser -Organization $Organization -Type User
+ 
+# Function to filter and create backup items for users
+Function CreateBackupItems($groupUsers) {
+    $usernames = $groupUsers | ForEach-Object { $_.Login }
+    $filteredUsers = $users | Where-Object { $usernames -contains $_.UserName }
+    $backupItems = foreach ($BackupUser in $filteredUsers) {
+        New-VBOBackupItem -User $BackupUser -Mailbox:$false -ArchiveMailbox:$false -OneDrive:$true -Sites:$false
+    }
+    return $backupItems
+}
+ 
+# Populate backup items for the specified groups
+$totalBackupItems = foreach ($group in $groupUsersList) {
+    CreateBackupItems -groupUsers $group
+}
+ 
+# Combine and update the job with total backup items
+Set-VBOJob -Job $Jobs -Repository $repo -SelectedItems $totalBackupItems
+ 
+# Stop recording the script actions
+Stop-Transcript
+
+
+hat Kontextmenü
