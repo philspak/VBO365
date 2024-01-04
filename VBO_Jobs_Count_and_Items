@@ -34,7 +34,7 @@ foreach ($job in $backupJobs) {
     if ($selectedItems -and $selectedItems.Count -gt 0) {
         # Print each selected item
         foreach ($item in $selectedItems) {
-            #Write-Host $item
+            Write-Host $item
         }
  
         # Count of selected items
